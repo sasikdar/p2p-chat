@@ -48,17 +48,17 @@ Future<void> insertMessage(messages message) async {
   );
 }
 
-Stream<dynamic> getMessage() async* {
+Future<List<messages>> getMessage() async{
   // Get a reference to the database.
 
 
   // Query the table for all The Dogs.
-  //final List<Map<String, dynamic>> maps = await _database.query('tbl_messages');
-  var maps=await _database.query('tbl_messages');
+  final List<Map<String, dynamic>> maps = await _database.query('tbl_messages');
+  //var maps=await _database.query('tbl_messages');
 
   // Convert the List<Map<String, dynamic> into a List<Dog>.
 
-  var messageList= List.generate(maps.length, (i) {
+  return List.generate(maps.length, (i) {
     return messages(
       //id: maps[i]['id'],
       message: maps[i]['message'],
@@ -66,7 +66,7 @@ Stream<dynamic> getMessage() async* {
     );
   });
 
-  yield _database.query('tbl_messages');
+  //yield _database.query('tbl_messages');
 
    }
 }

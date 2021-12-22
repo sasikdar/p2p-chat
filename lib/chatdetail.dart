@@ -117,55 +117,50 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
     var storage=getIt<Storage>();
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      stream: storage.getMessage(),
-      builder: (context, snapshot){
+    return FutureBuilder(
+      future: storage.getMessage(),
+      builder: (context, AsyncSnapshot<List<messages>> snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(
+              backgroundColor: Colors.lightBlueAccent,
+            ),
+          );
+        }
+        else {
+          var messagesList = snapshot.data;
+          /*final messagesList = List.generate(map!.length, (i) {
+            return messages(
+              //id: maps[i]['id'],
+              message: map[i]['message'],
+              messageType: map[i]['messageType'],
+            );
+          });*/
 
 
+          List<MessageBubble> messageBubbles = [];
+          for (var message in messagesList!) {
+            final messageText = message.message;
+            final messageType = message.messageType;
 
-            if (!snapshot.hasData) {
-              return Center(
-                child: CircularProgressIndicator(
-                  backgroundColor: Colors.lightBlueAccent,
-                ),
-              );
-            }
-            var map=snapshot.data;
-            final messagesList = List.generate( map.length, (i) {
-                                     return messages(
-                                            //id: maps[i]['id'],
-                                            message:  map[i]['message'],
-                                            messageType:  map[i]['messageType'],
-                                            );
-                                    });
-
-
-
-
-
-            List<MessageBubble> messageBubbles = [];
-            for (var message in messagesList!) {
-              final messageText = message.message;
-              final messageType = message.messageType;
-
-              final messageBubble = MessageBubble(
-                  Message:messageText,
-                  MessageType:messageType
-              );
-
-              messageBubbles.add(messageBubble);
-            }
-            return Expanded(
-              child: ListView(
-                  reverse: true,
-                  padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
-                  children: messageBubbles,
-
-              ),
+            final messageBubble = MessageBubble(
+                Message: messageText,
+                MessageType: messageType
             );
 
-      },
-    );
+            messageBubbles.add(messageBubble);
+          }
+          return Expanded(
+            child: ListView(
+              reverse: true,
+              padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
+              children: messageBubbles,
+
+            ),
+          );
+        }
+
+      });
   }
 
   }
