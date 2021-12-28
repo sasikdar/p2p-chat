@@ -13,7 +13,7 @@ void main() {
     sql.init();
     sql.insertMessage(Message1);
     sql.insertMessage(Message2);
-    List<messages> Messages; Messages = await sql.getMessage();
+    Stream<List<messages>> Messages; Messages = await sql.getMessage();
     expect(Messages.contains(Message1), true);
     expect(Messages.contains(Message2), true);
   });

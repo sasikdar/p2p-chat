@@ -3,13 +3,14 @@ import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'package:flutter_nearby_connections_example/messageModel.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqlbrite/sqlbrite.dart';
 
 class Storage{
   Storage();
 
 var databasePath;
 var dbDirectory;
-var _database;
+BriteDatabase? _database;
 
    Future<void> init() async {
      WidgetsFlutterBinding.ensureInitialized();
@@ -20,7 +21,7 @@ var _database;
         deleteDatabase(dbPath);
      }
 
-     _database = await openDatabase(
+     _database = BriteDatabase(await openDatabase(
        dbPath,
        onCreate: (db, version) {
          return db.execute(
@@ -28,7 +29,8 @@ var _database;
          );
        },
        version: 1,
-     );
+     ),logger:print);
+
 
 print("here i am ");
   }
@@ -41,32 +43,35 @@ Future<void> insertMessage(messages message) async {
   // `conflictAlgorithm` to use in case the same dog is inserted twice.
   //
   // In this case, replace any previous data.
-  await _database.insert(
+  await _database!.insert(
     'tbl_messages',
     message.toMap(),
     conflictAlgorithm: ConflictAlgorithm.replace,
   );
 }
 
-Future<List<messages>> getMessage() async{
+Stream<List<messages>> getMessage() async*{
+     yield* await _database!.createQuery('tbl_messages')
+      .mapToList((json) =>messages.fromMap(json))
+      .map((messageList) => messageList);
   // Get a reference to the database.
-
-
   // Query the table for all The Dogs.
-  final List<Map<String, dynamic>> maps = await _database.query('tbl_messages');
-  //var maps=await _database.query('tbl_messages');
+  // final List<Map<String, dynamic>> maps = await _database.query('tbl_messages');
+  var maps =await _database!.createQuery('tbl_messages');
+  maps.last;
 
   // Convert the List<Map<String, dynamic> into a List<Dog>.
 
-  return List.generate(maps.length, (i) {
-    return messages(
+  /* var maps;
+     yield List.generate((maps=await _database.query('tbl_messages')).length, (i) {
+     return messages(
       //id: maps[i]['id'],
       message: maps[i]['message'],
       messageType: maps[i]['messageType'],
-    );
-  });
-
-  //yield _database.query('tbl_messages');
+      );
+   });
+  */
+    //yield _database.query('tbl_messages');
 
    }
 }

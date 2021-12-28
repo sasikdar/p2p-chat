@@ -6,6 +6,14 @@ class messages{
     messages({required this.message,required this.messageType});
 
 
+   factory messages.fromMap(Map<String, dynamic> json) {
+     return messages(
+       message:json['message'],
+       messageType: json['messageType'],
+     );
+   }
+
+
 
    Map<String, dynamic> toMap() {
      return {

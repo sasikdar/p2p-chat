@@ -1,8 +1,13 @@
+import 'dart:async';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections_example/LocalStorage.dart';
 import 'package:flutter_nearby_connections_example/service_locator.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'messageModel.dart';
+import 'package:rxdart_ext/rxdart_ext.dart';
+
+
 
 
 
@@ -92,6 +97,10 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                     messageType: "sender",
                                     message: messageText);
                                 storage.insertMessage(Message);
+                                new NearbyService().sendMessage(widget._device!.deviceId,messageText);
+                                    //                   device.deviceId, myController.text);
+                                    //               myController.text = '';
+                                    //             },
                                 _replyTextController.clear();
                               },
                               child: Icon(
@@ -113,33 +122,91 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   }
 }
 
+
+
+class ViewState {
+  final List<messages> Messages;
+  final bool isLoading;
+  final AsyncError? error;
+
+  static const loading = ViewState._([], true, null);
+
+  const ViewState._(this.Messages, this.isLoading, this.error);
+
+  ViewState.success(List<messages> Messages) : this._(Messages, false, null);
+
+  ViewState.failure(Object e, StackTrace s)
+      : this._([], false, AsyncError(e, s));
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is ViewState &&
+              runtimeType == other.runtimeType &&
+              const ListEquality<messages>().equals(Messages, other.Messages) &&
+              isLoading == other.isLoading &&
+              error == other.error;
+
+  @override
+  int get hashCode => Messages.hashCode ^ isLoading.hashCode ^ error.hashCode;
+
+  @override
+  String toString() =>
+      'ViewState{items.length: ${Messages.length}, isLoading: $isLoading, error: $error}';
+}
+
+
   class chatStream extends StatelessWidget {
     var storage=getIt<Storage>();
-  @override
+    final compositeSubscription = CompositeSubscription();
+    late final StateStream<ViewState> messagesList =storage
+        .getMessage()
+        .map((items) => ViewState.success(items))
+        .onErrorReturnWith((e, s) => ViewState.failure(e, s))
+        .debug(identifier: '<<STATE>>', log: debugPrint)
+        .publishState(ViewState.loading)
+      ..connect().addTo(compositeSubscription);
+    @override
+    void initState() {
+      final _ = messagesList;
+    }
+
+    @override
+    void dispose() {
+      compositeSubscription.dispose();
+      //super.dispose();
+    }
+
+
+    @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: storage.getMessage(),
-      builder: (context, AsyncSnapshot<List<messages>> snapshot) {
-        if (!snapshot.hasData) {
+    return StreamBuilder<ViewState>(
+      stream: messagesList,
+      initialData: messagesList.value,
+      builder: (context,snapshot) {
+        final state = snapshot.requireData;
+        if (state.error != null) {
+          debugPrint('Error: ${state.error!.error}');
+          debugPrint('Stacktrace: ${state.error!.stackTrace}');
+
           return Center(
-            child: CircularProgressIndicator(
-              backgroundColor: Colors.lightBlueAccent,
+            child: Text(
+              'Error: ${state.error!.error}',
+              style: Theme.of(context).textTheme.headline6,
+              textAlign: TextAlign.center,
             ),
           );
         }
-        else {
-          var messagesList = snapshot.data;
-          /*final messagesList = List.generate(map!.length, (i) {
-            return messages(
-              //id: maps[i]['id'],
-              message: map[i]['message'],
-              messageType: map[i]['messageType'],
-            );
-          });*/
 
+        if (state.isLoading) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
+        }
 
+          var messagesList = state.Messages;
           List<MessageBubble> messageBubbles = [];
-          for (var message in messagesList!) {
+          for (var message in messagesList) {
             final messageText = message.message;
             final messageType = message.messageType;
 
@@ -160,10 +227,9 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
           );
         }
 
-      });
-  }
-
-  }
+    );
+    }
+}
 
 
 
@@ -179,17 +245,17 @@ class MessageBubble extends StatelessWidget {
       padding: EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment:
-        this.MessageType=="Sender"? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        this.MessageType.toLowerCase()=="sender"? CrossAxisAlignment.start: CrossAxisAlignment.end,
         children: <Widget>[
           Text(
-            "sender",
+            this.MessageType.toLowerCase()=="sender"?"sender":"reciever",
             style: TextStyle(
-              fontSize: 12.0,
+              fontSize: 10.0,
               color: Colors.black54,
             ),
           ),
           Material(
-            borderRadius: this.MessageType=="Sender"
+            borderRadius: this.MessageType.toLowerCase()=="sender"
                 ? BorderRadius.only(
                 topLeft: Radius.circular(30.0),
                 bottomLeft: Radius.circular(30.0),
@@ -200,13 +266,13 @@ class MessageBubble extends StatelessWidget {
               topRight: Radius.circular(30.0),
             ),
             elevation: 5.0,
-            color: this.MessageType=="Sender"? Colors.lightBlueAccent : Colors.white,
+            color: this.MessageType.toLowerCase()=="sender"? Colors.lightBlueAccent : Colors.white,
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
               child: Text(
                 this.Message,
                 style: TextStyle(
-                  color: this.MessageType=="Sender"? Colors.white : Colors.black54,
+                  color: this.MessageType.toLowerCase()=="sender"? Colors.white : Colors.black54,
                   fontSize: 15.0,
                 ),
               ),
