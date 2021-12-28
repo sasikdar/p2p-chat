@@ -219,7 +219,7 @@ class ViewState {
           }
           return Expanded(
             child: ListView(
-              reverse: true,
+              reverse: false,
               padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
               children: messageBubbles,
 
@@ -245,7 +245,7 @@ class MessageBubble extends StatelessWidget {
       padding: EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment:
-        this.MessageType.toLowerCase()=="sender"? CrossAxisAlignment.start: CrossAxisAlignment.end,
+        this.MessageType.toLowerCase()=="sender"? CrossAxisAlignment.end: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
             this.MessageType.toLowerCase()=="sender"?"sender":"reciever",
