@@ -1,4 +1,4 @@
-# p2p-chat : A chat application which runs without any central network infrastructure 
+# p2p-chat : A chat application running on ad-hoc network infrastructure 
 
 Demonstrates how to use the flutter_nearby_connections plugin.
 
