@@ -2,7 +2,7 @@
 
 Demonstrates how to use the flutter_nearby_connections plugin.
 
-## Getting Started
+## Basic Idea
 
 This is proof of concept, the idea is to check if it is possible to build a full-pfledged chat application which could run without the help 
 of a central network infratructure such as cellular network or wifi-acess point connected to internet. This could be especially built for maintaining communication during crisis siutation when central network can be unavailable.
