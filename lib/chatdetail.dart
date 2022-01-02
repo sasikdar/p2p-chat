@@ -1,22 +1,20 @@
 import 'dart:async';
 import 'package:collection/collection.dart';
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections_example/LocalStorage.dart';
+import 'package:flutter_nearby_connections_example/indentityService.dart';
 import 'package:flutter_nearby_connections_example/service_locator.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'messageModel.dart';
 import 'package:rxdart_ext/rxdart_ext.dart';
 
-
-
-
-
-class ChatDetailPage extends StatefulWidget{
+class ChatDetailPage extends StatefulWidget {
   Device? _device;
   @override
   _ChatDetailPageState createState() => _ChatDetailPageState();
-  ChatDetailPage(Device device){
-    this._device=device;
+  ChatDetailPage(Device device) {
+    this._device = device;
   }
 }
 
@@ -24,12 +22,15 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   TextEditingController _replyTextController = new TextEditingController();
   // ScrollController _scrollController = new ScrollController();
   Stream<messages> MessageList = Stream<messages>.empty();
-  var storage=getIt<Storage>();
+  var storage = getIt<Storage>();
   late String messageText;
+  DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+
+
 
   @override
   void initState() {
-  print(storage);
+    print(storage);
   }
 
   @override
@@ -40,17 +41,27 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             onPressed: () {
               Navigator.pop(context);
             },
-            icon: Icon(Icons.arrow_back, color: Colors.black,),
+            icon: Icon(
+              Icons.arrow_back,
+              color: Colors.black,
+            ),
           ),
-          title: Text(widget._device!.deviceName.toString()),
+          title:  FutureBuilder(
+              future:getUserfromdeviceID(widget._device!.deviceName),
+              builder:(context, AsyncSnapshot<String> snapshot){
+                if(snapshot.hasData)
+                {
+                  return Text(snapshot.data!);
+                }
+                else
+                  return CircularProgressIndicator();
+              }),//Text(getUserfromdeviceID(widget._device!.deviceName)),
         ),
-
-
         body: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              chatStream(),
+              chatStream(widget._device!),
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Container(
@@ -72,11 +83,16 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                   color: Colors.lightBlue,
                                   borderRadius: BorderRadius.circular(30),
                                 ),
-                                child: Icon(Icons.add, color: Colors.white,
-                                  size: 20,),
+                                child: Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
                               ),
                             ),
-                            SizedBox(width: 15,),
+                            SizedBox(
+                              width: 15,
+                            ),
                             Expanded(
                               child: TextField(
                                 onChanged: (value) {
@@ -86,43 +102,41 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                 decoration: InputDecoration(
                                     hintText: "Write message...",
                                     hintStyle: TextStyle(color: Colors.black54),
-                                    border: InputBorder.none
-                                ),
+                                    border: InputBorder.none),
                               ),
                             ),
-                            SizedBox(width: 15,),
+                            SizedBox(
+                              width: 15,
+                            ),
                             FloatingActionButton(
-                              onPressed: () {
+                              onPressed: () async {
+                                var andriodInfo= await deviceInfo.androidInfo;
                                 var Message = new messages(
-                                    messageType: "sender",
+                                    sender:andriodInfo.androidId,
+                                    reciever:widget._device!.deviceName,
                                     message: messageText);
+                                var sentMessagetext=Message.message+"substringidentifyXYZ"+Message.reciever+"substringidentifyXYZ"+Message.sender;
                                 storage.insertMessage(Message);
-                                new NearbyService().sendMessage(widget._device!.deviceId,messageText);
-                                    //                   device.deviceId, myController.text);
-                                    //               myController.text = '';
-                                    //             },
+                                new NearbyService().sendMessage(widget._device!.deviceId,sentMessagetext);
+                                debugPrint(widget._device!.deviceId+await getUserfromdeviceID(widget._device!.deviceName));
                                 _replyTextController.clear();
                               },
                               child: Icon(
-                                Icons.send, color: Colors.white, size: 18,),
+                                Icons.send,
+                                color: Colors.white,
+                                size: 18,
+                              ),
                               backgroundColor: Colors.blue,
                               elevation: 0,
                             ),
                           ],
-
                         )
-                      ]
-                  )
-                  ,
+                      ]),
                 ),
               )
-            ])
-
-    );
+            ]));
   }
 }
-
-
 
 class ViewState {
   final List<messages> Messages;
@@ -141,11 +155,11 @@ class ViewState {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-          other is ViewState &&
-              runtimeType == other.runtimeType &&
-              const ListEquality<messages>().equals(Messages, other.Messages) &&
-              isLoading == other.isLoading &&
-              error == other.error;
+      other is ViewState &&
+          runtimeType == other.runtimeType &&
+          const ListEquality<messages>().equals(Messages, other.Messages) &&
+          isLoading == other.isLoading &&
+          error == other.error;
 
   @override
   int get hashCode => Messages.hashCode ^ isLoading.hashCode ^ error.hashCode;
@@ -155,65 +169,66 @@ class ViewState {
       'ViewState{items.length: ${Messages.length}, isLoading: $isLoading, error: $error}';
 }
 
+class chatStream extends StatelessWidget {
+  chatStream(this.device);
+  final Device device;
 
-  class chatStream extends StatelessWidget {
-    var storage=getIt<Storage>();
-    final compositeSubscription = CompositeSubscription();
-    late final StateStream<ViewState> messagesList =storage
-        .getMessage()
-        .map((items) => ViewState.success(items))
-        .onErrorReturnWith((e, s) => ViewState.failure(e, s))
-        .debug(identifier: '<<STATE>>', log: debugPrint)
-        .publishState(ViewState.loading)
-      ..connect().addTo(compositeSubscription);
-    @override
-    void initState() {
-      final _ = messagesList;
-    }
+  var storage = getIt<Storage>();
+  final compositeSubscription = CompositeSubscription();
+  late final StateStream<ViewState> messagesList = storage
+      .getMessage()
+      .map((items) => ViewState.success(items))
+      .onErrorReturnWith((e, s) => ViewState.failure(e, s))
+      .debug(identifier: '<<STATE>>', log: debugPrint)
+      .publishState(ViewState.loading)
+    ..connect().addTo(compositeSubscription);
+  @override
+  void initState() {
+    final _ = messagesList;
+  }
 
-    @override
-    void dispose() {
-      compositeSubscription.dispose();
-      //super.dispose();
-    }
+  @override
+  void dispose() {
+    compositeSubscription.dispose();
+    //super.dispose();
+  }
 
-
-    @override
+  @override
   Widget build(BuildContext context) {
     return StreamBuilder<ViewState>(
-      stream: messagesList,
-      initialData: messagesList.value,
-      builder: (context,snapshot) {
-        final state = snapshot.requireData;
-        if (state.error != null) {
-          debugPrint('Error: ${state.error!.error}');
-          debugPrint('Stacktrace: ${state.error!.stackTrace}');
+        stream: messagesList,
+        initialData: messagesList.value,
+        builder: (context, snapshot) {
+          final state = snapshot.requireData;
+          if (state.error != null) {
+            debugPrint('Error: ${state.error!.error}');
+            debugPrint('Stacktrace: ${state.error!.stackTrace}');
 
-          return Center(
-            child: Text(
-              'Error: ${state.error!.error}',
-              style: Theme.of(context).textTheme.headline6,
-              textAlign: TextAlign.center,
-            ),
-          );
-        }
+            return Center(
+              child: Text(
+                'Error: ${state.error!.error}',
+                style: Theme.of(context).textTheme.headline6,
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
 
-        if (state.isLoading) {
-          return const Center(
-            child: CircularProgressIndicator(),
-          );
-        }
+          if (state.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
           var messagesList = state.Messages;
           List<MessageBubble> messageBubbles = [];
           for (var message in messagesList) {
             final messageText = message.message;
-            final messageType = message.messageType;
+            final sender = message.sender;
+            final reciever=message.reciever;
 
-            final messageBubble = MessageBubble(
-                Message: messageText,
-                MessageType: messageType
-            );
+
+            final messageBubble =
+                MessageBubble(Message: messageText,Sender:sender,Reciever: reciever,device:device);
 
             messageBubbles.add(messageBubble);
           }
@@ -222,57 +237,74 @@ class ViewState {
               reverse: false,
               padding: EdgeInsets.symmetric(horizontal: 10.0, vertical: 20.0),
               children: messageBubbles,
-
             ),
           );
-        }
-
-    );
-    }
+        });
+  }
 }
 
-
-
 class MessageBubble extends StatelessWidget {
-  MessageBubble({required this.Message, required this.MessageType});
-
+  MessageBubble({required this.Message, required this.Sender,required this.Reciever,required this.device});
+  final Device device;
   final String Message;
-  final String MessageType;
+  final String Sender;
+  final String Reciever;
+  DeviceInfoPlugin deviceinfo=DeviceInfoPlugin();
+  var andriodInfo;
+  @override
+  Future<void> initState() async {
+    //andriodInfo=await deviceinfo.androidInfo;
+
+  }
+
+
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context){
+
     return Padding(
       padding: EdgeInsets.all(10.0),
       child: Column(
-        crossAxisAlignment:
-        this.MessageType.toLowerCase()=="sender"? CrossAxisAlignment.end: CrossAxisAlignment.start,
+
+
+        crossAxisAlignment: this.Reciever ==device.deviceName
+            ? CrossAxisAlignment.end
+            : CrossAxisAlignment.start,
         children: <Widget>[
-          Text(
-            this.MessageType.toLowerCase()=="sender"?"sender":"reciever",
-            style: TextStyle(
-              fontSize: 10.0,
-              color: Colors.black54,
+
+         // Text(
+            this.Reciever== device.deviceName?
+            Text(
+              "you",
+               style: TextStyle(
+                 fontSize: 10.0,
+                 color: Colors.black54,
             ),
-          ),
+          ):UsernamefromDeviceWidget(device:device),
+
           Material(
-            borderRadius: this.MessageType.toLowerCase()=="sender"
+            borderRadius: this.Reciever ==device.deviceName
                 ? BorderRadius.only(
-                topLeft: Radius.circular(30.0),
-                bottomLeft: Radius.circular(30.0),
-                bottomRight: Radius.circular(30.0))
+                    topLeft: Radius.circular(30.0),
+                    bottomLeft: Radius.circular(30.0),
+                    bottomRight: Radius.circular(30.0))
                 : BorderRadius.only(
-              bottomLeft: Radius.circular(30.0),
-              bottomRight: Radius.circular(30.0),
-              topRight: Radius.circular(30.0),
-            ),
+                    bottomLeft: Radius.circular(30.0),
+                    bottomRight: Radius.circular(30.0),
+                    topRight: Radius.circular(30.0),
+                  ),
             elevation: 5.0,
-            color: this.MessageType.toLowerCase()=="sender"? Colors.lightBlueAccent : Colors.white,
+            color: this.Reciever ==device.deviceName
+                ? Colors.lightBlueAccent
+                : Colors.white,
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
               child: Text(
                 this.Message,
                 style: TextStyle(
-                  color: this.MessageType.toLowerCase()=="sender"? Colors.white : Colors.black54,
+                  color: this.Reciever ==device.deviceName
+                      ? Colors.white
+                      : Colors.black54,
                   fontSize: 15.0,
                 ),
               ),

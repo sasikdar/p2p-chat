@@ -1,15 +1,16 @@
 class messages{
    static int idcounter=0;
-
-    final String messageType;
+    final String sender;
+    final String reciever;
     final String message;
-    messages({required this.message,required this.messageType});
+    messages({required this.message,required this.reciever,required this.sender });
 
 
    factory messages.fromMap(Map<String, dynamic> json) {
      return messages(
        message:json['message'],
-       messageType: json['messageType'],
+       sender:json['sender'],
+       reciever:json['reciever']
      );
    }
 
@@ -19,7 +20,10 @@ class messages{
      return {
        'id': idcounter++,
        'message': message,
-       'messageType': messageType,
+       //'messageType': messageType,
+       'sender':sender,
+       'reciever':reciever
+
 
      };
    }
@@ -28,6 +32,6 @@ class messages{
    // each dog when using the print statement.
    @override
    String toString() {
-     return 'messages{messageType: $messageType, message: $message}';
+     return 'messages{message: $message,sender:$sender,receiver:$reciever}';
    }
 }

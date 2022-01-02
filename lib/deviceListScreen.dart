@@ -5,6 +5,7 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
+import 'package:flutter_nearby_connections_example/indentityService.dart';
 import 'package:flutter_nearby_connections_example/service_locator.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'LocalStorage.dart';
@@ -12,6 +13,7 @@ import 'chatdetail.dart';
 import 'messageModel.dart';
 
 enum DeviceType { advertiser, browser }
+
 class DevicesListScreen extends StatefulWidget {
   const DevicesListScreen({required this.deviceType});
 
@@ -27,7 +29,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   late NearbyService nearbyService;
   late StreamSubscription subscription;
   late StreamSubscription receivedDataSubscription;
-  var storage=getIt<Storage>();
+  var storage = getIt<Storage>();
 
   bool isInit = false;
 
@@ -56,12 +58,12 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         backgroundColor: Colors.white,
         body: ListView.builder(
             itemCount: getItemCount(),
-            itemBuilder: (context, index) {
-           /*   final device = widget.deviceType == DeviceType.advertiser
+            itemBuilder: (context, index)  {
+              /*   final device = widget.deviceType == DeviceType.advertiser
                   ? connectedDevices[index]
                   : devices[index];*/
 
-              final device=devices[index];
+              final device = devices[index];
               return Container(
                 margin: EdgeInsets.all(8.0),
                 child: Column(
@@ -70,19 +72,21 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                       children: [
                         Expanded(
                             child: GestureDetector(
-                              onTap: () => _onTabItemListener(device),
-                              child: Column(
-                                children: [
-                                  Text(device.deviceName),
-                                  Text(
-                                    getStateName(device.state),
-                                    style: TextStyle(
-                                        color: getStateColor(device.state)),
-                                  ),
-                                ],
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          onTap: () => _onTabItemListener(device),
+                          child: Column(
+                            children: [
+                              //Text(device.deviceName),
+                              UsernamefromDeviceWidget(device: device),
+
+                              Text(
+                                getStateName(device.state),
+                                style: TextStyle(
+                                    color: getStateColor(device.state)),
                               ),
-                            )),
+                            ],
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        )),
                         // Request connect
                         GestureDetector(
                           onTap: () => _onButtonClicked(device),
@@ -161,36 +165,9 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
 
   _onTabItemListener(Device device) {
     if (device.state == SessionState.connected) {
-
-      Navigator.push(context, MaterialPageRoute(builder: (context){
+      Navigator.push(context, MaterialPageRoute(builder: (context) {
         return ChatDetailPage(device);
       }));
-
-      // showDialog(
-      //     context: context,
-      //     builder: (BuildContext context) {
-      //       final myController = TextEditingController();
-      //       return AlertDialog(
-      //         title: Text("Send message"),
-      //         content: TextField(controller: myController),
-      //         actions: [
-      //           TextButton(
-      //             child: Text("Cancel"),
-      //             onPressed: () {
-      //               Navigator.of(context).pop();
-      //             },
-      //           ),
-      //           TextButton(
-      //             child: Text("Send"),
-      //             onPressed: () {
-      //               nearbyService.sendMessage(
-      //                   device.deviceId, myController.text);
-      //               myController.text = '';
-      //             },
-      //           )
-      //         ],
-      //       );
-      //     });
     }
   }
 
@@ -224,8 +201,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      devInfo = androidInfo.model;
-
+      devInfo =androidInfo.androidId;
     }
     if (Platform.isIOS) {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
@@ -237,61 +213,51 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         strategy: Strategy.P2P_CLUSTER,
         callback: (isRunning) async {
           if (isRunning) {
-            /* if (widget.deviceType == DeviceType.browser) {
-
-              await nearbyService.stopBrowsingForPeers();
-              await Future.delayed(Duration(microseconds: 200));
-              await nearbyService.startBrowsingForPeers();
-            } else {
-              await nearbyService.stopAdvertisingPeer();
-              await nearbyService.stopBrowsingForPeers();
-              await Future.delayed(Duration(microseconds: 200));
-              await nearbyService.startAdvertisingPeer();
-              await nearbyService.startBrowsingForPeers();
-            }*/
             await nearbyService.stopBrowsingForPeers();
             await nearbyService.stopAdvertisingPeer();
             await Future.delayed(Duration(microseconds: 200));
             nearbyService.startAdvertisingPeer();
             nearbyService.startBrowsingForPeers();
-
-
           }
         });
-    subscription =
-        nearbyService.stateChangedSubscription(callback: (devicesList) {
-          devicesList.forEach((element) {
-            print(
-                " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
 
-            if (Platform.isAndroid) {
-              if (element.state == SessionState.connected) {
-                nearbyService.stopBrowsingForPeers();
-              } else {
-                nearbyService.invitePeer(
-                  deviceID: element.deviceId,
-                  deviceName: element.deviceName,
-                );
-                nearbyService.startBrowsingForPeers();
-              }
-            }
-          });
+    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+      devicesList.forEach((element) {
+        print(
+            " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
 
-          setState(() {
-            devices.clear();
-            devices.addAll(devicesList);
-            connectedDevices.clear();
-            connectedDevices.addAll(devicesList
-                .where((d) => d.state == SessionState.connected)
-                .toList());
-          });
-        });
+        if (Platform.isAndroid) {
+          if (element.state == SessionState.connected) {
+            nearbyService.stopBrowsingForPeers();
+          } else {
+            nearbyService.invitePeer(
+              deviceID: element.deviceId,
+              deviceName: element.deviceName,
+            );
+            nearbyService.startBrowsingForPeers();
+          }
+        }
+      });
 
+      setState(() {
+        devices.clear();
+        devices.addAll(devicesList);
+        connectedDevices.clear();
+        connectedDevices.addAll(devicesList
+            .where((d) => d.state == SessionState.connected)
+            .toList());
+      });
+    });
     receivedDataSubscription =
         nearbyService.dataReceivedSubscription(callback: (data) {
 
-        messages m1=new messages( messageType:'recieved', message:data["message"]);
-         storage.insertMessage(m1);
+          var message=data["message"];
+          var messageparts=message.split("substringidentifyXYZ");
+          messages m1 = new messages(
+              sender: messageparts[2],
+              message: messageparts[0],
+              reciever: messageparts[1]);
+          storage.insertMessage(m1);
 
 
           print("dataReceivedSubscription: ${jsonEncode(data)}");
@@ -301,5 +267,22 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               alignment: Alignment.center,
               position: StyledToastPosition.bottom);
         });
+
+    /*receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+      print("inside the datarecieved subscription");
+      messages m1 = new messages(
+          sender: data["message"].split("substringidentifyXYZ")[2],
+          message: data["message"].split("substringidentifyXYZ")[0],
+          reciever: data["message"].split["substringidentifyXYZ"][1]);
+      storage.insertMessage(m1);
+
+      print("dataReceivedSubscription: ${jsonEncode(data)}");
+      showToast(jsonEncode(data),
+          context: context,
+          axis: Axis.horizontal,
+          alignment: Alignment.center,
+          position: StyledToastPosition.bottom);
+    });*/
   }
 }
+

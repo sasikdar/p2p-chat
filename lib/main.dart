@@ -1,7 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'dart:io';
-import 'package:device_info/device_info.dart';
 import 'package:flutter_nearby_connections_example/LocalStorage.dart';
 import 'package:flutter_nearby_connections_example/routes.dart';
 import 'package:flutter_nearby_connections_example/service_locator.dart';
@@ -15,9 +12,8 @@ import 'package:get_it/get_it.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-
   await setupGetIt();
-  var storage=getIt<Storage>();
+  var storage = getIt<Storage>();
   storage.init();
   runApp(MyApp());
 }
@@ -77,7 +73,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }*/
-
-
-
-

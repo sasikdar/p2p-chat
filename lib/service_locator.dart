@@ -10,3 +10,5 @@ Future<void> setupGetIt() async {
 
   getIt.registerSingleton<Storage>(Storage());
 }
+
+
