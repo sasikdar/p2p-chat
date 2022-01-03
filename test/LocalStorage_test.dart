@@ -7,14 +7,9 @@ void main() {
 
 
   test('test db', () async {
-   // var Message1 = new messages(message: "Hello", messageType: "sender");
-   //var  Message2 = new messages(message: "Hello", messageType: "reciever");
     var sql = new Storage();
     sql.init();
-    //sql.insertMessage(Message1);
-    //sql.insertMessage(Message2);
     Stream<List<messages>> Messages; Messages = await sql.getMessage();
-   // expect(Messages.contains(Message1), true);
-    //expect(Messages.contains(Message2), true);
+
   });
 }

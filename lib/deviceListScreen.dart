@@ -52,7 +52,9 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+
           //title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
+          backgroundColor:Colors.black87,
           title: Text("Connected Devices"),
         ),
         backgroundColor: Colors.white,
@@ -157,9 +159,9 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     switch (state) {
       case SessionState.notConnected:
       case SessionState.connecting:
-        return Colors.green;
+        return Colors.greenAccent;
       default:
-        return Colors.red;
+        return Colors.pinkAccent;
     }
   }
 

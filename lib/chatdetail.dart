@@ -37,13 +37,14 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
+            backgroundColor:Colors.black87,
           leading: IconButton(
             onPressed: () {
               Navigator.pop(context);
             },
             icon: Icon(
               Icons.arrow_back,
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
           title:  FutureBuilder(
@@ -74,22 +75,6 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                       children: [
                         Row(
                           children: <Widget>[
-                            GestureDetector(
-                              onTap: () {},
-                              child: Container(
-                                height: 30,
-                                width: 30,
-                                decoration: BoxDecoration(
-                                  color: Colors.lightBlue,
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
                             SizedBox(
                               width: 15,
                             ),
@@ -100,6 +85,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                 },
                                 controller: _replyTextController,
                                 decoration: InputDecoration(
+
                                     hintText: "Write message...",
                                     hintStyle: TextStyle(color: Colors.black54),
                                     border: InputBorder.none),
@@ -120,13 +106,13 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                 new NearbyService().sendMessage(widget._device!.deviceId,sentMessagetext);
                                 debugPrint(widget._device!.deviceId+await getUserfromdeviceID(widget._device!.deviceName));
                                 _replyTextController.clear();
-                              },
+                                },
                               child: Icon(
                                 Icons.send,
                                 color: Colors.white,
                                 size: 18,
                               ),
-                              backgroundColor: Colors.blue,
+                              backgroundColor: Colors.cyan,
                               elevation: 0,
                             ),
                           ],
