@@ -2,23 +2,23 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_nearby_connections_example/LocalStorage.dart';
-import 'package:flutter_nearby_connections_example/indentityService.dart';
-import 'package:flutter_nearby_connections_example/service_locator.dart';
+import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
+import 'package:flutter_nearby_connections_example/services/indentityService.dart';
+import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
-import 'messageModel.dart';
+import '../models/messageModel.dart';
 import 'package:rxdart_ext/rxdart_ext.dart';
 
-class ChatDetailPage extends StatefulWidget {
+class privateChatScreen extends StatefulWidget {
   Device? _device;
   @override
-  _ChatDetailPageState createState() => _ChatDetailPageState();
-  ChatDetailPage(Device device) {
+  _privateChatScreenState createState() => _privateChatScreenState();
+  privateChatScreen(Device device) {
     this._device = device;
   }
 }
 
-class _ChatDetailPageState extends State<ChatDetailPage> {
+class _privateChatScreenState extends State<privateChatScreen> {
   TextEditingController _replyTextController = new TextEditingController();
   // ScrollController _scrollController = new ScrollController();
   Stream<messages> MessageList = Stream<messages>.empty();
@@ -48,7 +48,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             ),
           ),
           title:  FutureBuilder(
-              future:getUserfromdeviceID(widget._device!.deviceName),
+              future:getUserFromDeviceID(widget._device!.deviceName),
               builder:(context, AsyncSnapshot<String> snapshot){
                 if(snapshot.hasData)
                 {
@@ -62,7 +62,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              chatStream(widget._device!),
+              PrivateMessageWidget(widget._device!),
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Container(
@@ -104,7 +104,7 @@ class _ChatDetailPageState extends State<ChatDetailPage> {
                                 var sentMessagetext=Message.message+"substringidentifyXYZ"+Message.reciever+"substringidentifyXYZ"+Message.sender;
                                 storage.insertMessage(Message);
                                 new NearbyService().sendMessage(widget._device!.deviceId,sentMessagetext);
-                                debugPrint(widget._device!.deviceId+await getUserfromdeviceID(widget._device!.deviceName));
+                                debugPrint(widget._device!.deviceId+await getUserFromDeviceID(widget._device!.deviceName));
                                 _replyTextController.clear();
                                 },
                               child: Icon(
@@ -154,9 +154,13 @@ class ViewState {
   String toString() =>
       'ViewState{items.length: ${Messages.length}, isLoading: $isLoading, error: $error}';
 }
-
-class chatStream extends StatelessWidget {
-  chatStream(this.device);
+/*
+ * PrivateMessageWidget displays the private messages to the user,
+ * this widget gets the private messages from the database as a stream and displays them.
+ * device: The device which will recieve the chat message
+ */
+class PrivateMessageWidget extends StatelessWidget {
+  PrivateMessageWidget(this.device);
   final Device device;
 
   var storage = getIt<Storage>();
@@ -239,7 +243,6 @@ class MessageBubble extends StatelessWidget {
   var andriodInfo;
   @override
   Future<void> initState() async {
-    //andriodInfo=await deviceinfo.androidInfo;
 
   }
 
@@ -266,7 +269,7 @@ class MessageBubble extends StatelessWidget {
                  fontSize: 10.0,
                  color: Colors.black54,
             ),
-          ):UsernamefromDeviceWidget(device:device),
+          ):GetUserNameFromDeviceIDWidget(device:device),
 
           Material(
             borderRadius: this.Reciever ==device.deviceName

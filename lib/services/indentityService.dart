@@ -3,20 +3,24 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
-import 'package:flutter_nearby_connections_example/LocalStorage.dart';
-import 'package:flutter_nearby_connections_example/service_locator.dart';
-import 'package:flutter_nearby_connections_example/userModel.dart';
+import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
+import 'package:flutter_nearby_connections_example/services/service_locator.dart';
+import 'package:flutter_nearby_connections_example/models/userModel.dart';
 
-Future<String> getUserfromdeviceID(String deviceID) async {
-  //Storage storage=new Storage();
-
+Future<String> getUserFromDeviceID(String deviceID) async {
   var storage = getIt<Storage>();
   User? user=await storage.getUserwithdeviceID(deviceID);
   return user!.name;
 }
 
-class UsernamefromDeviceWidget extends StatelessWidget {
-  const UsernamefromDeviceWidget({
+/*
+ * the function getUserFromDeviceID return a future, so Texts need to be wrapped into
+ * future builder, this is a reusable widget which is used multiple times in privateChatScreen
+ * takes a deviceID and returns a widget which displays the user to which the device belongs to.
+ */
+
+class GetUserNameFromDeviceIDWidget extends StatelessWidget {
+  const GetUserNameFromDeviceIDWidget({
     Key? key,
     required this.device,
   }) : super(key: key);
@@ -26,7 +30,7 @@ class UsernamefromDeviceWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder(
-        future:getUserfromdeviceID(device.deviceName),
+        future:getUserFromDeviceID(device.deviceName),
         builder:(context, AsyncSnapshot<String> snapshot){
           if(snapshot.hasData)
           {

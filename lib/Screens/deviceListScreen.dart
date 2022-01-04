@@ -5,12 +5,12 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
-import 'package:flutter_nearby_connections_example/indentityService.dart';
-import 'package:flutter_nearby_connections_example/service_locator.dart';
+import 'package:flutter_nearby_connections_example/services/indentityService.dart';
+import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
-import 'LocalStorage.dart';
-import 'chatdetail.dart';
-import 'messageModel.dart';
+import '../services/LocalStorageService.dart';
+import 'privateChatScreen.dart';
+import '../models/messageModel.dart';
 
 enum DeviceType { advertiser, browser }
 
@@ -52,18 +52,20 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-
           //title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
-          backgroundColor:Colors.black87,
+          backgroundColor: Colors.black87,
           title: Text("Connected Devices"),
         ),
         backgroundColor: Colors.white,
         body: ListView.builder(
             itemCount: getItemCount(),
-            itemBuilder: (context, index)  {
+            itemBuilder: (context, index) {
               /*   final device = widget.deviceType == DeviceType.advertiser
                   ? connectedDevices[index]
                   : devices[index];*/
+              //Todo 04/01: instead of getting devices from device list it should be fetched from devicetbl
+              //Todo 04/01: devices state should be checked from the devices list and all devices can be chatted with, currently only online devices can be chatted
+              //Todo 04/01: with which are connected, unconnected devices will be delivered messages via relay devices.
 
               final device = devices[index];
               return Container(
@@ -78,7 +80,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                           child: Column(
                             children: [
                               //Text(device.deviceName),
-                              UsernamefromDeviceWidget(device: device),
+                              GetUserNameFromDeviceIDWidget(device: device),
 
                               Text(
                                 getStateName(device.state),
@@ -122,7 +124,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               );
             }));
   }
-
+  //getStateName returns device state @param state is a device state.
   String getStateName(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
@@ -168,7 +170,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   _onTabItemListener(Device device) {
     if (device.state == SessionState.connected) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return ChatDetailPage(device);
+        return privateChatScreen(device);
       }));
     }
   }
@@ -201,9 +203,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService = NearbyService();
     String devInfo = '';
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    AndroidDeviceInfo androidInfo;
     if (Platform.isAndroid) {
-      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      devInfo =androidInfo.androidId;
+      androidInfo = await deviceInfo.androidInfo;
+      devInfo = androidInfo.androidId;
     }
     if (Platform.isIOS) {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
@@ -222,8 +225,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             nearbyService.startBrowsingForPeers();
           }
         });
-
-    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+    //Todo 04/01 when the state changes to connected, the device should be stored in the device table,
+    //Todo 04/01 before putting the device in device table we should check if the device already exists
+    subscription =
+        nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList.forEach((element) {
         print(
             " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
@@ -250,41 +255,29 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             .toList());
       });
     });
+
     receivedDataSubscription =
-        nearbyService.dataReceivedSubscription(callback: (data) {
+        nearbyService.dataReceivedSubscription(callback: (data) async {
+      var message = data["message"];
+      var messageparts = message.split("substringidentifyXYZ");
 
-          var message=data["message"];
-          var messageparts=message.split("substringidentifyXYZ");
-          messages m1 = new messages(
-              sender: messageparts[2],
-              message: messageparts[0],
-              reciever: messageparts[1]);
-          storage.insertMessage(m1);
-
-
-          print("dataReceivedSubscription: ${jsonEncode(data)}");
-          showToast(jsonEncode(data),
-              context: context,
-              axis: Axis.horizontal,
-              alignment: Alignment.center,
-              position: StyledToastPosition.bottom);
-        });
-
-    /*receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
-      print("inside the datarecieved subscription");
       messages m1 = new messages(
-          sender: data["message"].split("substringidentifyXYZ")[2],
-          message: data["message"].split("substringidentifyXYZ")[0],
-          reciever: data["message"].split["substringidentifyXYZ"][1]);
-      storage.insertMessage(m1);
+          sender: messageparts[2],
+          message: messageparts[0],
+          reciever: messageparts[1]);
 
+      androidInfo = await deviceInfo.androidInfo;
+      if (m1.reciever == androidInfo!.androidId) {
+        storage.insertMessage(m1);
+      } else {
+        storage.insertMessageinIntermediatetbl(m1);
+      }
       print("dataReceivedSubscription: ${jsonEncode(data)}");
       showToast(jsonEncode(data),
           context: context,
           axis: Axis.horizontal,
           alignment: Alignment.center,
           position: StyledToastPosition.bottom);
-    });*/
+    });
   }
 }
-

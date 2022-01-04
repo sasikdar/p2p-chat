@@ -1,6 +1,6 @@
-import 'package:flutter_nearby_connections_example/LocalStorage.dart';
+import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter_nearby_connections_example/messageModel.dart';
+import 'package:flutter_nearby_connections_example/models/messageModel.dart';
 
 
 void main() {

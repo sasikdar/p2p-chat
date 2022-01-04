@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'deviceListScreen.dart';
+import 'Screens/deviceListScreen.dart';
 import 'main.dart';
 
 Route<dynamic> generateRoute(RouteSettings settings) {

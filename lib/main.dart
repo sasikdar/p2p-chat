@@ -1,12 +1,12 @@
 import 'dart:async';
-import 'package:flutter_nearby_connections_example/LocalStorage.dart';
+import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
 import 'package:flutter_nearby_connections_example/routes.dart';
-import 'package:flutter_nearby_connections_example/service_locator.dart';
+import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
-import 'chatdetail.dart';
-import 'messageModel.dart';
+import 'Screens/privateChatScreen.dart';
+import 'models/messageModel.dart';
 import 'package:get_it/get_it.dart';
 
 Future<void> main() async {
