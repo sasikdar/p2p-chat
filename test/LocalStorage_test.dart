@@ -9,7 +9,7 @@ void main() {
   test('test db', () async {
     var sql = new Storage();
     sql.init();
-    Stream<List<messages>> Messages; Messages = await sql.getMessage();
+    //Stream<List<messages>> Messages; Messages = await sql.getMessage();
 
   });
 }

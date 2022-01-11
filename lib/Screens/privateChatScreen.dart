@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
+import 'package:flutter_nearby_connections_example/services/P2PService.dart';
 import 'package:flutter_nearby_connections_example/services/indentityService.dart';
 import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
@@ -22,7 +23,9 @@ class _privateChatScreenState extends State<privateChatScreen> {
   TextEditingController _replyTextController = new TextEditingController();
   // ScrollController _scrollController = new ScrollController();
   Stream<messages> MessageList = Stream<messages>.empty();
+  List<Device> devices=[];
   var storage = getIt<Storage>();
+  var p2p=getIt<P2P>();
   late String messageText;
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
@@ -31,6 +34,7 @@ class _privateChatScreenState extends State<privateChatScreen> {
   @override
   void initState() {
     print(storage);
+
   }
 
   @override
@@ -162,6 +166,7 @@ class ViewState {
 class PrivateMessageWidget extends StatelessWidget {
   PrivateMessageWidget(this.device);
   final Device device;
+
 
   var storage = getIt<Storage>();
   final compositeSubscription = CompositeSubscription();

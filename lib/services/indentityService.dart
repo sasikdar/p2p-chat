@@ -10,7 +10,12 @@ import 'package:flutter_nearby_connections_example/models/userModel.dart';
 Future<String> getUserFromDeviceID(String deviceID) async {
   var storage = getIt<Storage>();
   User? user=await storage.getUserwithdeviceID(deviceID);
-  return user!.name;
+
+  if(user!=null)
+    return user.name;
+  else
+    return 'Unknown User' ;
+
 }
 
 /*

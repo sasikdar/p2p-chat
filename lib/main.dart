@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
 import 'package:flutter_nearby_connections_example/routes.dart';
+import 'package:flutter_nearby_connections_example/services/P2PService.dart';
 import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:flutter/material.dart';
@@ -14,7 +15,7 @@ Future<void> main() async {
 
   await setupGetIt();
   var storage = getIt<Storage>();
-  storage.init();
+  await storage.init();
   runApp(MyApp());
 }
 
@@ -23,6 +24,7 @@ Future<void> main() async {
   * from the routes.dart
  */
 class MyApp extends StatelessWidget {
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

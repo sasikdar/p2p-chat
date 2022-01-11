@@ -5,6 +5,7 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
+import 'package:flutter_nearby_connections_example/models/userModel.dart';
 import 'package:flutter_nearby_connections_example/services/indentityService.dart';
 import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_styled_toast/flutter_styled_toast.dart';
@@ -15,9 +16,7 @@ import '../models/messageModel.dart';
 enum DeviceType { advertiser, browser }
 
 class DevicesListScreen extends StatefulWidget {
-  const DevicesListScreen({required this.deviceType});
-
-  final DeviceType deviceType;
+  const DevicesListScreen();
 
   @override
   _DevicesListScreenState createState() => _DevicesListScreenState();
@@ -26,10 +25,16 @@ class DevicesListScreen extends StatefulWidget {
 class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> devices = [];
   List<Device> connectedDevices = [];
+  List<String> deviceNames=[];
   late NearbyService nearbyService;
   late StreamSubscription subscription;
   late StreamSubscription receivedDataSubscription;
   var storage = getIt<Storage>();
+  var _device;
+  // var p2p=getIt<P2P>();
+  // List<User> userList=await storage.getAllUsers();
+  DeviceInfoPlugin deviceInfoPlugin = DeviceInfoPlugin();
+  late AndroidDeviceInfo androidInfo;
 
   bool isInit = false;
 
@@ -51,65 +56,66 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          //title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
-          backgroundColor: Colors.black87,
-          title: Text("Connected Devices"),
-        ),
-        backgroundColor: Colors.white,
-        body: ListView.builder(
-            itemCount: getItemCount(),
-            itemBuilder: (context, index) {
-              /*   final device = widget.deviceType == DeviceType.advertiser
-                  ? connectedDevices[index]
-                  : devices[index];*/
-              //Todo 04/01: instead of getting devices from device list it should be fetched from devicetbl
-              //Todo 04/01: devices state should be checked from the devices list and all devices can be chatted with, currently only online devices can be chatted
-              //Todo 04/01: with which are connected, unconnected devices will be delivered messages via relay devices.
+      appBar: AppBar(
+        //title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
+        backgroundColor: Colors.black87,
+        title: Text("Peepli"),
+      ),
+      backgroundColor: Colors.white,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Connected Users',textAlign: TextAlign.start, style: TextStyle(color: Colors.green,fontSize: 20),),
+          SizedBox(
+            height: 8.0,
+          ),
+          Expanded(
+            flex: 2,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: getItemCount(),
+              itemBuilder: (context, index) {
 
-              final device = devices[index];
-              return Container(
-                margin: EdgeInsets.all(8.0),
-                child: Column(
-                  children: [
+                  _device=devices[index];
+                  return Container(
+                  margin: EdgeInsets.all(8.0),
+                  child: Column(
+                      children: [
                     Row(
                       children: [
                         Expanded(
                             child: GestureDetector(
-                          onTap: () => _onTabItemListener(device),
+                          onTap:() => _onTabItemListener(_device),
                           child: Column(
                             children: [
-                              //Text(device.deviceName),
-                              GetUserNameFromDeviceIDWidget(device: device),
-
-                              Text(
-                                getStateName(device.state),
-                                style: TextStyle(
-                                    color: getStateColor(device.state)),
-                              ),
+                              GetUserNameFromDeviceIDWidget(device: _device),
+                              Text(getStateName(_device.state),
+                                  style: TextStyle(
+                                    color: getStateColor(_device.state),
+                                  )),
                             ],
                             crossAxisAlignment: CrossAxisAlignment.start,
                           ),
+
                         )),
-                        // Request connect
                         GestureDetector(
-                          onTap: () => _onButtonClicked(device),
+                          onTap:() => _onButtonClicked(_device),
                           child: Container(
                             margin: EdgeInsets.symmetric(horizontal: 8.0),
                             padding: EdgeInsets.all(8.0),
                             height: 35,
                             width: 100,
-                            color: getButtonColor(device.state),
+                            color: getButtonColor(_device.state),
                             child: Center(
                               child: Text(
-                                getButtonStateName(device.state),
+                                'Chat',//getButtonStateName(_device.state),
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold),
                               ),
                             ),
                           ),
-                        )
+                        ),
                       ],
                     ),
                     SizedBox(
@@ -119,11 +125,100 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                       height: 1,
                       color: Colors.grey,
                     )
-                  ],
+                  ]),
+                );
+              },
+            ),
+          ),
+          Divider(
+            height: 5,
+            color: Colors.black87
+          ),
+
+          Expanded(
+            flex: 2,
+            child:Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children:[
+                Text('Disconnected Users',textAlign: TextAlign.start, style: TextStyle(color: Colors.redAccent,fontSize: 20),),
+                SizedBox(
+                  height: 8.0,
                 ),
+                FutureBuilder(
+                  future: storage.getUsersNotin(devices),
+                  builder: (context, AsyncSnapshot<List<User>> snapshot) {
+                    return ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: snapshot.data!.length,
+                    itemBuilder: (context, index) {
+                      if(snapshot.hasData)
+                        {
+                      //if(devices[index].deviceName!=androidInfo.androidId)
+                      User _user=snapshot.data![index];
+                      return Container(
+                        margin: EdgeInsets.all(8.0),
+                        child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                      child: GestureDetector(
+                                        onTap:() => _onTabItemListener(_device),
+                                        child: Column(
+                                          children: [
+                                            Text(_user.name),
+                                            Text('Disconnected',
+                                                style: TextStyle(
+                                                  color: Colors.grey,
+                                                )),
+                                          ],
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                        ),
+
+                                      )),
+                                  GestureDetector(
+                                    onTap: () {},
+                                    child: Container(
+                                      margin: EdgeInsets.symmetric(horizontal: 8.0),
+                                      padding: EdgeInsets.all(8.0),
+                                      height: 35,
+                                      width: 100,
+                                      color: Colors.greenAccent,
+                                      child: Center(
+                                        child: Text(
+                                          'Connect',
+                                          style: TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(
+                                height: 8.0,
+                              ),
+                              Divider(
+                                height: 1,
+                                color: Colors.grey,
+                              )
+                            ]),
+                      );}
+                      else {
+                        return CircularProgressIndicator();
+                      }
+                    },
               );
-            }));
+                  }
+                )]
+            ),
+          ),
+        ],
+      ),
+    );
   }
+
   //getStateName returns device state @param state is a device state.
   String getStateName(SessionState state) {
     switch (state) {
@@ -135,7 +230,19 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         return "connected";
     }
   }
+  _onButtonClicked(Device device) {
+    switch (device.state) {
 
+        case SessionState.notConnected:
+          nearbyService.invitePeer(
+            deviceID: device.deviceId,
+            deviceName: device.deviceName,
+          );
+          break;
+        case SessionState.connecting:
+        break;
+    }
+  }
   String getButtonStateName(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
@@ -176,34 +283,15 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   int getItemCount() {
-    if (widget.deviceType == DeviceType.advertiser) {
-      return connectedDevices.length;
-    } else {
-      return devices.length;
-    }
+    return devices.length;
   }
 
-  _onButtonClicked(Device device) {
-    switch (device.state) {
-      case SessionState.notConnected:
-        nearbyService.invitePeer(
-          deviceID: device.deviceId,
-          deviceName: device.deviceName,
-        );
-        break;
-      case SessionState.connected:
-        nearbyService.disconnectPeer(deviceID: device.deviceId);
-        break;
-      case SessionState.connecting:
-        break;
-    }
-  }
 
   void init() async {
     nearbyService = NearbyService();
     String devInfo = '';
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
-    AndroidDeviceInfo androidInfo;
+    //AndroidDeviceInfo androidInfo;
     if (Platform.isAndroid) {
       androidInfo = await deviceInfo.androidInfo;
       devInfo = androidInfo.androidId;
@@ -225,8 +313,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             nearbyService.startBrowsingForPeers();
           }
         });
-    //Todo 04/01 when the state changes to connected, the device should be stored in the device table,
-    //Todo 04/01 before putting the device in device table we should check if the device already exists
+
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList.forEach((element) {
@@ -237,6 +324,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
           if (element.state == SessionState.connected) {
             nearbyService.stopBrowsingForPeers();
           } else {
+            nearbyService.startAdvertisingPeer();
+            nearbyService.startBrowsingForPeers();
             nearbyService.invitePeer(
               deviceID: element.deviceId,
               deviceName: element.deviceName,
@@ -249,10 +338,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       setState(() {
         devices.clear();
         devices.addAll(devicesList);
-        connectedDevices.clear();
-        connectedDevices.addAll(devicesList
-            .where((d) => d.state == SessionState.connected)
-            .toList());
       });
     });
 
@@ -267,7 +352,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
           reciever: messageparts[1]);
 
       androidInfo = await deviceInfo.androidInfo;
-      if (m1.reciever == androidInfo!.androidId) {
+      if (m1.reciever == androidInfo.androidId) {
         storage.insertMessage(m1);
       } else {
         storage.insertMessageinIntermediatetbl(m1);

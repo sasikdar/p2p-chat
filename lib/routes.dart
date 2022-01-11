@@ -9,10 +9,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       //return MaterialPageRoute(builder: (_) => Home());
     case 'browser':
       return MaterialPageRoute(
-          builder: (_) => DevicesListScreen(deviceType: DeviceType.browser));
+          builder: (_) => DevicesListScreen());
     case 'advertiser':
       return MaterialPageRoute(
-          builder: (_) => DevicesListScreen(deviceType: DeviceType.advertiser));
+          builder: (_) => DevicesListScreen());
     default:
       return MaterialPageRoute(
           builder: (_) => Scaffold(
