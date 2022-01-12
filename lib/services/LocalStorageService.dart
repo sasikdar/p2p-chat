@@ -45,7 +45,7 @@ class Storage {
   createUserdata() {
     User user1 = new User(deviceId: '3c352e33c5c8fc16', name: 'pixel-A3c35');
     User user2 = new User(deviceId: 'c16cf900be58fef9', name: 'pixel-Bc16c');
-    User user3 = new User(deviceId: '01a7446f54129a36', name: 'sayan-mate20');
+    User user3 = new User(deviceId: '76032f7bd4a429bb', name: 'sayan-mate20');
     insertUsers(user1);
     insertUsers(user2);
     insertUsers(user3);
@@ -82,6 +82,17 @@ class Storage {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
+  Future<List<messages>> getMessagefromIntermediatetbl() async {
+    List<messages> messagesList=[];
+    List<Map<String, dynamic>> maps = await _database!.query(intermessagestbl);
+    if (maps.length > 0) {
+      maps.forEach((element) {
+        messagesList.add(messages.fromMap(element));
+      });
+    }
+    return messagesList;
+
+  }
 
   //Todo 04/01: rename it to insert devices, and also make sure that devices can have null in user field.
   Future<void> insertUsers(User user) async {
@@ -92,16 +103,17 @@ class Storage {
     );
   }
 
-  Stream<List<messages>> getMessage() async* {
+  Stream<List<messages>> getMessage(String deviceId) async* {
     DeviceInfoPlugin devinfo=DeviceInfoPlugin();
     var andriodInfo= await devinfo.androidInfo;
     var andriodid=andriodInfo.androidId;
-    var sql='select * from $messagestbl  where sender="'+andriodid+'" or reciever="'+andriodid+'"';
+    var sql='select * from $messagestbl  where sender="'+deviceId+'" or reciever="'+deviceId+'"';
     yield* await _database!
         .createRawQuery([messagestbl],sql)
         .mapToList((json) => messages.fromMap(json))
         .map((messageList) => messageList);
   }
+
 
   Future<User?> getUserwithdeviceID(String deviceID) async {
 

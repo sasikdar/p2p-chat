@@ -12,10 +12,12 @@ import 'package:rxdart_ext/rxdart_ext.dart';
 
 class privateChatScreen extends StatefulWidget {
   Device? _device;
+  List<Device>? _devices;
   @override
   _privateChatScreenState createState() => _privateChatScreenState();
-  privateChatScreen(Device device) {
+  privateChatScreen(Device device, List<Device> devices) {
     this._device = device;
+    this._devices=devices;
   }
 }
 
@@ -23,9 +25,8 @@ class _privateChatScreenState extends State<privateChatScreen> {
   TextEditingController _replyTextController = new TextEditingController();
   // ScrollController _scrollController = new ScrollController();
   Stream<messages> MessageList = Stream<messages>.empty();
-  List<Device> devices=[];
+  //List<Device> devices=[];
   var storage = getIt<Storage>();
-  var p2p=getIt<P2P>();
   late String messageText;
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
 
@@ -105,9 +106,17 @@ class _privateChatScreenState extends State<privateChatScreen> {
                                     sender:andriodInfo.androidId,
                                     reciever:widget._device!.deviceName,
                                     message: messageText);
+
                                 var sentMessagetext=Message.message+"substringidentifyXYZ"+Message.reciever+"substringidentifyXYZ"+Message.sender;
                                 storage.insertMessage(Message);
-                                new NearbyService().sendMessage(widget._device!.deviceId,sentMessagetext);
+                                if(widget._device!.deviceId=='XXX'){
+                                  widget._devices!.forEach((element) {
+                                    new NearbyService().sendMessage(element.deviceId,sentMessagetext);
+                                  });
+
+                                }else{
+                                  new NearbyService().sendMessage(widget._device!.deviceId,sentMessagetext);
+                                }
                                 debugPrint(widget._device!.deviceId+await getUserFromDeviceID(widget._device!.deviceName));
                                 _replyTextController.clear();
                                 },
@@ -171,7 +180,7 @@ class PrivateMessageWidget extends StatelessWidget {
   var storage = getIt<Storage>();
   final compositeSubscription = CompositeSubscription();
   late final StateStream<ViewState> messagesList = storage
-      .getMessage()
+      .getMessage(device.deviceName)
       .map((items) => ViewState.success(items))
       .onErrorReturnWith((e, s) => ViewState.failure(e, s))
       .debug(identifier: '<<STATE>>', log: debugPrint)

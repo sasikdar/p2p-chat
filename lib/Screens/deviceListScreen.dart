@@ -42,8 +42,15 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
     init();
+    WidgetsBinding.instance!
+        .addPostFrameCallback((_) =>transmitIntermidiateMessages(context));
   }
-
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    WidgetsBinding.instance!
+        .addPostFrameCallback((_) => transmitIntermidiateMessages(context));
+  }
   @override
   void dispose() {
     subscription.cancel();
@@ -85,7 +92,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                       children: [
                         Expanded(
                             child: GestureDetector(
-                          onTap:() => _onTabItemListener(_device),
+                          onTap:() => _onTabItemListener(_device,devices),
                           child: Column(
                             children: [
                               GetUserNameFromDeviceIDWidget(device: _device),
@@ -163,7 +170,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                 children: [
                                   Expanded(
                                       child: GestureDetector(
-                                        onTap:() => _onTabItemListener(_device),
+                                        onTap:() => _onTabItemListener(Device("XXX",_user.deviceId,0),devices),
                                         child: Column(
                                           children: [
                                             Text(_user.name),
@@ -176,7 +183,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                         ),
 
                                       )),
-                                  GestureDetector(
+                             /*     GestureDetector(
                                     onTap: () {},
                                     child: Container(
                                       margin: EdgeInsets.symmetric(horizontal: 8.0),
@@ -193,7 +200,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                                         ),
                                       ),
                                     ),
-                                  ),
+                                  ),*/
                                 ],
                               ),
                               SizedBox(
@@ -229,6 +236,16 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       default:
         return "connected";
     }
+  }
+
+  Future<void> transmitIntermidiateMessages(BuildContext context) async {
+   List<messages> intermidiateMessages= await storage.getMessagefromIntermediatetbl();
+   devices.forEach((element) {
+     intermidiateMessages.forEach((message) {
+       NearbyService().sendMessage(element.deviceId, message.message);
+     });
+
+   });
   }
   _onButtonClicked(Device device) {
     switch (device.state) {
@@ -274,11 +291,20 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     }
   }
 
-  _onTabItemListener(Device device) {
+  _onTabItemListener(Device device,List<Device> _devices) {
+
     if (device.state == SessionState.connected) {
       Navigator.push(context, MaterialPageRoute(builder: (context) {
-        return privateChatScreen(device);
+        return privateChatScreen(device,_devices);
       }));
+    }
+    else{
+      if(device.deviceId=='XXX'){
+        Navigator.push(context, MaterialPageRoute(builder: (context) {
+          return privateChatScreen(device,_devices);
+        }));
+
+      }
     }
   }
 
