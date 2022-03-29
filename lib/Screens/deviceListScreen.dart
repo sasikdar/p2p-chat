@@ -5,6 +5,8 @@ import 'package:device_info/device_info.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
+import 'package:flutter_nearby_connections_example/Screens/publicChatScrren.dart';
+import 'package:flutter_nearby_connections_example/models/publicMessageModel.dart';
 import 'package:flutter_nearby_connections_example/models/userModel.dart';
 import 'package:flutter_nearby_connections_example/services/indentityService.dart';
 import 'package:flutter_nearby_connections_example/services/service_locator.dart';
@@ -42,14 +44,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
     init();
-    WidgetsBinding.instance!
-        .addPostFrameCallback((_) =>transmitIntermidiateMessages(context));
   }
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WidgetsBinding.instance!
-        .addPostFrameCallback((_) => transmitIntermidiateMessages(context));
   }
   @override
   void dispose() {
@@ -221,6 +219,38 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 )]
             ),
           ),
+          Divider(
+              height: 5,
+              color: Colors.black87
+          ),
+          Expanded(
+            flex:2,
+
+              child:Container(
+                padding: EdgeInsets.all(30),
+                alignment: Alignment.bottomRight,
+                child:
+                  Column(
+                    children: [
+                      Text('Annoucement'),
+                      ElevatedButton(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) {
+                        return publicChatScreen(devices);}));
+                        },
+                      child: Icon(Icons.add, color: Colors.white,semanticLabel: 'Annouce',),
+                      style: ElevatedButton.styleFrom(
+                        shape: CircleBorder(),
+                        padding: EdgeInsets.all(30),
+                        primary: Colors.blue, // <-- Button color
+                        onPrimary: Colors.red,
+                        // <-- Splash color
+                      )
+                ),
+                    ],
+                  ),
+              )
+          )
         ],
       ),
     );
@@ -238,17 +268,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     }
   }
 
-  Future<void> transmitIntermidiateMessages(BuildContext context) async {
-   List<messages> intermidiateMessages= await storage.getMessagefromIntermediatetbl();
-   devices.forEach((element) {
-     intermidiateMessages.forEach((message) {
-       NearbyService().sendMessage(element.deviceId, message.message);
-     });
 
-   });
-  }
   _onButtonClicked(Device device) {
     switch (device.state) {
+
 
         case SessionState.notConnected:
           nearbyService.invitePeer(
@@ -294,6 +317,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   _onTabItemListener(Device device,List<Device> _devices) {
 
     if (device.state == SessionState.connected) {
+
       Navigator.push(context, MaterialPageRoute(builder: (context) {
         return privateChatScreen(device,_devices);
       }));
@@ -317,6 +341,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService = NearbyService();
     String devInfo = '';
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    List<messages> intermidiateMessages= await storage.getMessagefromIntermediatetbl();
     //AndroidDeviceInfo androidInfo;
     if (Platform.isAndroid) {
       androidInfo = await deviceInfo.androidInfo;
@@ -343,11 +368,18 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList.forEach((element) {
-        print(
-            " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
+        print(" deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
 
         if (Platform.isAndroid) {
           if (element.state == SessionState.connected) {
+            //intermidiateMessages List of messages fetched from tbl_intermidateMessages
+            intermidiateMessages.forEach((Message) {
+              print("will try to transmit message now");
+              var sentText=Message.message+"substringidentifyXYZ"+Message.reciever+"substringidentifyXYZ"+Message.sender;
+              nearbyService.sendMessage(element.deviceId, sentText);
+              print("transmitted message now");
+            });
+
             nearbyService.stopBrowsingForPeers();
           } else {
             nearbyService.startAdvertisingPeer();
@@ -371,18 +403,38 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         nearbyService.dataReceivedSubscription(callback: (data) async {
       var message = data["message"];
       var messageparts = message.split("substringidentifyXYZ");
+      if(messageparts[0]=='PRI') {
+        messages m1 = new messages(
+            sender: messageparts[3],
+            message: messageparts[1],
+            reciever: messageparts[2]);
 
-      messages m1 = new messages(
-          sender: messageparts[2],
-          message: messageparts[0],
-          reciever: messageparts[1]);
+        androidInfo = await deviceInfo.androidInfo;
+        if (m1.reciever == androidInfo.androidId) {
+          storage.insertMessage(m1);
+        } else {
+          storage.insertMessageinIntermediatetbl(m1);
+        }
+      }else if(messageparts[0]=='PUB')
+        {
+          publicmessages m1 = new publicmessages(
+              sender: messageparts[3],
+              message: messageparts[1],
+              messageIndetifier: messageparts[2],);
+          List<String> messageIDlist=await storage.getPublicMessageasIDList();
 
-      androidInfo = await deviceInfo.androidInfo;
-      if (m1.reciever == androidInfo.androidId) {
-        storage.insertMessage(m1);
-      } else {
-        storage.insertMessageinIntermediatetbl(m1);
-      }
+          if(!messageIDlist.contains(m1.messageIndetifier))
+            {
+              storage.insertPublicMessage(m1);
+              devices.forEach((device) {
+               if( device .deviceName!=m1.sender && device.deviceName!=androidInfo.androidId)
+                 nearbyService.sendMessage(device.deviceId, 'PUB'+"substringidentifyXYZ"+m1.message+"substringidentifyXYZ"+m1.messageIndetifier+"substringidentifyXYZ"+m1.sender);
+
+              });
+            }
+
+          //public message recieving code
+        }
       print("dataReceivedSubscription: ${jsonEncode(data)}");
       showToast(jsonEncode(data),
           context: context,

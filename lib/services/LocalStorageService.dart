@@ -7,11 +7,13 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:sqlbrite/sqlbrite.dart';
 import 'package:sqlbrite/sqlbrite.dart';
+import 'package:flutter_nearby_connections_example/models/publicMessageModel.dart';
 
 class Storage {
   Storage();
   //Todo 04/01: Rename tbl_users to tbl_devices
   var messagestbl = 'tbl_messages';
+  var publicmessagetbl='tbl_publicMessages';
   var intermessagestbl = 'tbl_messages_inter';
   var usertbl = 'tbl_users';
   var databasePath;
@@ -58,12 +60,23 @@ class Storage {
         'CREATE TABLE IF NOT EXISTS $usertbl(id INETEGER PRIMARY KEY, name TEXT, deviceId TEXT)');
     Future f3 = db.execute(
         'CREATE TABLE IF NOT EXISTS $intermessagestbl(id INTEGER PRIMARY KEY, message TEXT,sender TEXT,reciever TEXT )');
-    return Future.wait([f1, f2, f3]);
+    Future f4 = db.execute(
+        'CREATE TABLE IF NOT EXISTS $publicmessagetbl(id INTEGER PRIMARY KEY, message TEXT,sender TEXT, messageIndetifier Text)');
+
+    return Future.wait([f1, f2, f3,f4]);
   }
 
   Future<void> insertMessage(messages message) async {
     await _database!.insert(
       messagestbl,
+      message.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> insertPublicMessage(publicmessages message) async {
+    await _database!.insert(
+      publicmessagetbl,
       message.toMap(),
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
@@ -102,6 +115,42 @@ class Storage {
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
+
+
+
+  //Create a method for getPublicMessage which gets message based on self-andriod id and not the third
+  //device's andriod id
+
+  Stream<List<publicmessages>> getPublicMessage() async* {
+    DeviceInfoPlugin devinfo=DeviceInfoPlugin();
+    var andriodInfo= await devinfo.androidInfo;
+    var andriodid=andriodInfo.androidId;
+    var sql='select * from $publicmessagetbl';
+    yield* await _database!
+        .createRawQuery([publicmessagetbl],sql)
+        .mapToList((json) => publicmessages.fromMap(json))
+        .map((messageList) => messageList);
+  }
+  Future<List<String>> getPublicMessageasIDList() async {
+    DeviceInfoPlugin devinfo=DeviceInfoPlugin();
+    List<String> publicMessageList = List.empty(growable: true);
+    var andriodInfo= await devinfo.androidInfo;
+    var andriodid=andriodInfo.androidId;
+    var sql='select * from $publicmessagetbl';
+    List<Map<String, dynamic>> maps=await _database!.query(publicmessagetbl);
+    if (maps.length > 0) {
+      maps.forEach((element) {
+        publicMessageList.add(publicmessages
+            .fromMap(element)
+            .messageIndetifier);
+      });
+    }
+
+      return publicMessageList;
+
+    }
+
+
 
   Stream<List<messages>> getMessage(String deviceId) async* {
     DeviceInfoPlugin devinfo=DeviceInfoPlugin();

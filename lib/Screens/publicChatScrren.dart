@@ -2,31 +2,31 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_nearby_connections_example/models/publicMessageModel.dart';
 import 'package:flutter_nearby_connections_example/services/LocalStorageService.dart';
-import 'package:flutter_nearby_connections_example/services/indentityService.dart';
 import 'package:flutter_nearby_connections_example/services/service_locator.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import '../models/messageModel.dart';
 import 'package:rxdart_ext/rxdart_ext.dart';
 
-class privateChatScreen extends StatefulWidget {
-  Device? _device;
+class publicChatScreen extends StatefulWidget {
+
   List<Device>? _devices;
   @override
-  _privateChatScreenState createState() => _privateChatScreenState();
-  privateChatScreen(Device device, List<Device> devices) {
-    this._device = device;
+  _publicChatScreenState createState() => _publicChatScreenState();
+  publicChatScreen(List<Device> devices) {
     this._devices=devices;
   }
 }
 
-class _privateChatScreenState extends State<privateChatScreen> {
+class _publicChatScreenState extends State<publicChatScreen> {
   TextEditingController _replyTextController = new TextEditingController();
-  // ScrollController _scrollController = new ScrollController();
   Stream<messages> MessageList = Stream<messages>.empty();
   var storage = getIt<Storage>();
   late String messageText;
   DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+  var AndriodInfo;
+  var AndriodId;
 
 
 
@@ -36,11 +36,12 @@ class _privateChatScreenState extends State<privateChatScreen> {
 
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            backgroundColor:Colors.black87,
+          backgroundColor:Colors.black87,
           leading: IconButton(
             onPressed: () {
               Navigator.pop(context);
@@ -50,22 +51,13 @@ class _privateChatScreenState extends State<privateChatScreen> {
               color: Colors.white,
             ),
           ),
-          title:  FutureBuilder(
-              future:getUserFromDeviceID(widget._device!.deviceName),
-              builder:(context, AsyncSnapshot<String> snapshot){
-                if(snapshot.hasData)
-                {
-                  return Text(snapshot.data!);
-                }
-                else
-                  return CircularProgressIndicator();
-              }),//Text(getUserfromdeviceID(widget._device!.deviceName)),
+          title:Text("Annoucements"),
         ),
         body: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              PrivateMessageWidget(widget._device!),
+              publicMessageWidget(),
               Align(
                 alignment: Alignment.bottomLeft,
                 child: Container(
@@ -79,7 +71,8 @@ class _privateChatScreenState extends State<privateChatScreen> {
                         Row(
                           children: <Widget>[
                             SizedBox(
-                              width: 15,
+                              width: 5,
+                              height:30,
                             ),
                             Expanded(
                               child: TextField(
@@ -94,30 +87,22 @@ class _privateChatScreenState extends State<privateChatScreen> {
                                     border: InputBorder.none),
                               ),
                             ),
-                            SizedBox(
-                              width: 15,
-                            ),
+
                             FloatingActionButton(
                               onPressed: () async {
                                 var andriodInfo= await deviceInfo.androidInfo;
-                                var Message = new messages(
-                                    sender:andriodInfo.androidId,
-                                    reciever:widget._device!.deviceName,
-                                    message: messageText);
 
-                                var sentMessagetext="PRI"+"substringidentifyXYZ"+Message.message+"substringidentifyXYZ"+Message.reciever+"substringidentifyXYZ"+Message.sender;
-                                storage.insertMessage(Message);
-                                if(widget._device!.deviceId=='XXX'){
-                                  widget._devices!.forEach((element) {
+                                    var Message = new publicmessages(
+                                        sender:andriodInfo.androidId,
+                                        message:messageText,
+                                        messageIndetifier:andriodInfo.androidId+DateTime.now().millisecondsSinceEpoch.toString() );
+                                    storage.insertPublicMessage(Message);
+                                    var sentMessagetext="PUB"+"substringidentifyXYZ"+Message.message+"substringidentifyXYZ"+Message.messageIndetifier+"substringidentifyXYZ"+Message.sender;
+                                widget._devices!.forEach((element) {
                                     new NearbyService().sendMessage(element.deviceId,sentMessagetext);
                                   });
-
-                                }else{
-                                  new NearbyService().sendMessage(widget._device!.deviceId,sentMessagetext);
-                                }
-                                debugPrint(widget._device!.deviceId+await getUserFromDeviceID(widget._device!.deviceName));
                                 _replyTextController.clear();
-                                },
+                              },
                               child: Icon(
                                 Icons.send,
                                 color: Colors.white,
@@ -136,7 +121,7 @@ class _privateChatScreenState extends State<privateChatScreen> {
 }
 
 class ViewState {
-  final List<messages> Messages;
+  final List<publicmessages> Messages;
   final bool isLoading;
   final AsyncError? error;
 
@@ -144,7 +129,7 @@ class ViewState {
 
   const ViewState._(this.Messages, this.isLoading, this.error);
 
-  ViewState.success(List<messages> Messages) : this._(Messages, false, null);
+  ViewState.success(List<publicmessages> Messages) : this._(Messages, false, null);
 
   ViewState.failure(Object e, StackTrace s)
       : this._([], false, AsyncError(e, s));
@@ -152,11 +137,11 @@ class ViewState {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is ViewState &&
-          runtimeType == other.runtimeType &&
-          const ListEquality<messages>().equals(Messages, other.Messages) &&
-          isLoading == other.isLoading &&
-          error == other.error;
+          other is ViewState &&
+              runtimeType == other.runtimeType &&
+              const ListEquality<publicmessages>().equals(Messages, other.Messages) &&
+              isLoading == other.isLoading &&
+              error == other.error;
 
   @override
   int get hashCode => Messages.hashCode ^ isLoading.hashCode ^ error.hashCode;
@@ -165,20 +150,25 @@ class ViewState {
   String toString() =>
       'ViewState{items.length: ${Messages.length}, isLoading: $isLoading, error: $error}';
 }
+
+
+
+
+
 /*
  * PrivateMessageWidget displays the private messages to the user,
  * this widget gets the private messages from the database as a stream and displays them.
  * device: The device which will recieve the chat message
  */
-class PrivateMessageWidget extends StatelessWidget {
-  PrivateMessageWidget(this.device);
-  final Device device;
+class publicMessageWidget extends StatelessWidget {
+  publicMessageWidget();
+
 
 
   var storage = getIt<Storage>();
   final compositeSubscription = CompositeSubscription();
   late final StateStream<ViewState> messagesList = storage
-      .getMessage(device.deviceName)
+      .getPublicMessage() //replace with getPublicmessage function
       .map((items) => ViewState.success(items))
       .onErrorReturnWith((e, s) => ViewState.failure(e, s))
       .debug(identifier: '<<STATE>>', log: debugPrint)
@@ -226,11 +216,11 @@ class PrivateMessageWidget extends StatelessWidget {
           for (var message in messagesList) {
             final messageText = message.message;
             final sender = message.sender;
-            final reciever=message.reciever;
+            //final messageIndetifier=message.messageIndetifier;
 
 
             final messageBubble =
-                MessageBubble(Message: messageText,Sender:sender,Reciever: reciever,device:device);
+            MessageBubble(Message: messageText,Sender:sender);
 
             messageBubbles.add(messageBubble);
           }
@@ -246,17 +236,22 @@ class PrivateMessageWidget extends StatelessWidget {
 }
 
 class MessageBubble extends StatelessWidget {
-  MessageBubble({required this.Message, required this.Sender,required this.Reciever,required this.device});
-  final Device device;
+  MessageBubble({required this.Message, required this.Sender});
   final String Message;
   final String Sender;
-  final String Reciever;
   DeviceInfoPlugin deviceinfo=DeviceInfoPlugin();
-  var andriodInfo;
+  var AndriodInfo;
+  var AndriodId;
   @override
   Future<void> initState() async {
 
   }
+
+  void getAndriodId() async{
+    AndriodInfo= await deviceinfo.androidInfo;
+    AndriodId=AndriodInfo.androidId;
+  }
+
 
 
 
@@ -268,44 +263,41 @@ class MessageBubble extends StatelessWidget {
       child: Column(
 
 
-        crossAxisAlignment: this.Reciever ==device.deviceName
-            ? CrossAxisAlignment.end
-            : CrossAxisAlignment.start,
+        crossAxisAlignment: this.Sender ==AndriodId
+            ? CrossAxisAlignment.end: CrossAxisAlignment.start,
         children: <Widget>[
 
-         // Text(
-            this.Reciever== device.deviceName?
-            Text(
-              "you",
-               style: TextStyle(
-                 fontSize: 10.0,
-                 color: Colors.black54,
+          // Text(
+          this.Sender== AndriodId?Text('you'):
+          Text(
+            this.Sender,
+            style: TextStyle(
+              fontSize: 10.0,
+              color: Colors.black54,
             ),
-          ):GetUserNameFromDeviceIDWidget(device:device),
+          ),
 
           Material(
-            borderRadius: this.Reciever ==device.deviceName
-                ? BorderRadius.only(
-                    topLeft: Radius.circular(30.0),
-                    bottomLeft: Radius.circular(30.0),
-                    bottomRight: Radius.circular(30.0))
-                : BorderRadius.only(
-                    bottomLeft: Radius.circular(30.0),
-                    bottomRight: Radius.circular(30.0),
-                    topRight: Radius.circular(30.0),
-                  ),
+            borderRadius: this.Sender ==AndriodId
+                ?BorderRadius.only(
+                topLeft: Radius.circular(30.0),
+                bottomLeft: Radius.circular(30.0),
+                bottomRight: Radius.circular(30.0)):BorderRadius.only(
+              bottomLeft: Radius.circular(30.0),
+              bottomRight: Radius.circular(30.0),
+              topRight: Radius.circular(30.0),
+            ),
             elevation: 5.0,
-            color: this.Reciever ==device.deviceName
-                ? Colors.lightBlueAccent
-                : Colors.white,
+            color: this.Sender ==AndriodId
+                ?Colors.lightBlueAccent:Colors.white ,
             child: Padding(
               padding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 20.0),
               child: Text(
                 this.Message,
                 style: TextStyle(
-                  color: this.Reciever ==device.deviceName
-                      ? Colors.white
-                      : Colors.black54,
+                  color: this.Sender ==AndriodId
+                      ? Colors.white:Colors.black54
+                  ,
                   fontSize: 15.0,
                 ),
               ),
