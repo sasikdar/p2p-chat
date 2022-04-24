@@ -268,7 +268,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     }
   }
 
-
+  // Changes the state of the device, if the device is nearby but not connected,
+  // clicking the chat button connects the devices
   _onButtonClicked(Device device) {
     switch (device.state) {
 
@@ -283,6 +284,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         break;
     }
   }
+
+
   String getButtonStateName(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
@@ -364,7 +367,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             nearbyService.startBrowsingForPeers();
           }
         });
-
+    //call back function which checks if any of the devices have changed the connection state
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList.forEach((element) {
@@ -398,6 +401,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         devices.addAll(devicesList);
       });
     });
+
+    //call back function which deals with the data recieved and how to deal with them.
 
     receivedDataSubscription =
         nearbyService.dataReceivedSubscription(callback: (data) async {

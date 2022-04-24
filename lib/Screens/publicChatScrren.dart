@@ -91,6 +91,11 @@ class _publicChatScreenState extends State<publicChatScreen> {
                             FloatingActionButton(
                               onPressed: () async {
                                 var andriodInfo= await deviceInfo.androidInfo;
+                                /*
+                                 * Get the message from the input box
+                                 * Format it with padding text and sender and message identifier
+                                 * then flood it in the network
+                                 */
 
                                     var Message = new publicmessages(
                                         sender:andriodInfo.androidId,
@@ -156,9 +161,9 @@ class ViewState {
 
 
 /*
- * PrivateMessageWidget displays the private messages to the user,
- * this widget gets the private messages from the database as a stream and displays them.
- * device: The device which will recieve the chat message
+ * publicMessageWidget displays the public messages to the user,
+ * this widget gets the public messages from the database as a stream and displays them.
+ *
  */
 class publicMessageWidget extends StatelessWidget {
   publicMessageWidget();

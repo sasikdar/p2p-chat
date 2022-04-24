@@ -245,6 +245,8 @@ class PrivateMessageWidget extends StatelessWidget {
   }
 }
 
+// Widget which deals with the cosmetics of message bubble in the chat window.
+
 class MessageBubble extends StatelessWidget {
   MessageBubble({required this.Message, required this.Sender,required this.Reciever,required this.device});
   final Device device;
