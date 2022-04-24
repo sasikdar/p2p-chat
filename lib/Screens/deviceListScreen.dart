@@ -90,10 +90,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                       children: [
                         Expanded(
                             child: GestureDetector(
-                          onTap:() => _onTabItemListener(_device,devices),
+                          onTap:() => _onTabItemListener(devices[index],devices),
                           child: Column(
                             children: [
-                              GetUserNameFromDeviceIDWidget(device: _device),
+                              GetUserNameFromDeviceIDWidget(device: devices[index]),
                               Text(getStateName(_device.state),
                                   style: TextStyle(
                                     color: getStateColor(_device.state),

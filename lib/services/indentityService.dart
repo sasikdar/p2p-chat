@@ -25,7 +25,7 @@ Future<String> getUserFromDeviceID(String deviceID) async {
  */
 
 class GetUserNameFromDeviceIDWidget extends StatelessWidget {
-  const GetUserNameFromDeviceIDWidget({
+   GetUserNameFromDeviceIDWidget({
     Key? key,
     required this.device,
   }) : super(key: key);
